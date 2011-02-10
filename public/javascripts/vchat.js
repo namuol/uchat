@@ -358,6 +358,7 @@ VCHAT = function (container, socket) {
     });
 
     mocket.on('logBegin', function () {
+        whoIsHere = [];
         $(msgs).hide();
         $(msgs).html('');
     });
