@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js'></script>
+        <script src='/socket.io/socket.io.js'></script>
+        <script src='http://jtemplates.tpython.com/jquery-jtemplates.js'></script>
+        <script src='/javascripts/underscore.js'></script>
+        <script src='/javascripts/multio.js'></script>
+        <script src='/javascripts/vchat.js'></script>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Sans+Mono">
+        <link rel='stylesheet' type='text/css' href='/stylesheets/style.css' />
+    </head>
+    <body>
+        <div id='wrapper'>
+            <!--
+            <div class='status-msg'>
+            </div>
+
+            <form class='join-form'>
+                <input class='name' type='text' />
+            </form>
+
+            <div class='chat-panel'> 
+                <ul class='msgs'>
+                </ul>
+
+                <div class='msg-bar'>
+                    <form class='msg-form'>
+                        <input class='msg-input' type='text' />
+                    </form>
+                </div>
+            </div>
+            -->
+        </div>
+
+        <textarea id='joined-jtpl' style='display:none'>
+            <li class='joined'><span class='timestamp'>{u.timeString($T.time)}</span><span class='joined-name clickable-name'>{$T.name}</span><span class='joined'>joined</span></li>
+        </textarea>
+
+        <textarea id='left-jtpl' style='display:none'>
+            <li class='left'><span class='timestamp'>{u.timeString($T.time)}</span><span class='left-name clickable-name'>{$T.name}</span><span class='left'>left</span></li>
+        </textarea>
+
+        <textarea id='msg-jtpl' style='display:none'>
+            <li {#if $T.directedAtYou}class='attn'{#/if}><span class='timestamp'>{u.timeString($T.time)}</span><span class='msg-name clickable-name'>{$T.name}</span><span class='msg'>{$T.msg}</span></li>
+        </textarea>
+
+        <textarea id='cmd-jtpl' style='display:none'>
+            <li class='cmd-msg'>{$T.msg}</li>
+        </textarea>
+
+        <textarea id='cmd-err-jtpl' style='display:none'>
+            <li class='cmd-msg err'>{$T.msg}</li>
+        </textarea>
+
+        <script type='text/javascript'>
+            var socket = new io.Socket(),
+                u = VCHAT($('#wrapper'), socket);
+        </script>
+    </body>
+</html>

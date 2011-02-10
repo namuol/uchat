@@ -1,0 +1,229 @@
+.rounded_corners (@radius: 5pt) {
+    -moz-border-radius: @radius;
+    -webkit-border-radius: @radius;
+    border-radius: @radius;
+}
+
+.top_left_border_radius (@radius: 5pt) {
+    -moz-border-radius-topleft: @radius;
+    -webkit-border-top-left-radius: @radius;
+    border-top-left-radius: @radius;
+}
+
+.top_right_border_radius (@radius: 5pt) {
+    -moz-border-radius-topright: @radius;
+    -webkit-border-top-right-radius: @radius;
+    border-top-right-radius: @radius;
+}
+
+.bottom_left_border_radius (@radius: 5pt) {
+    -moz-border-radius-bottomleft: @radius;
+    -webkit-border-bottom-left-radius: @radius;
+    border-bottom-left-radius: @radius;
+}
+
+.bottom_right_border_radius (@radius: 5pt) {
+    -moz-border-radius-bottomright: @radius;
+    -webkit-border-bottom-right-radius: @radius;
+    border-bottom-right-radius: @radius;
+}
+
+.text_shadow (@left: 0, @top: 1pt, @penumbra: 4pt, @rgba: rgba(0,0,0,0.9)) {
+    text-shadow: @left @top @penumbra @rgba;
+}
+
+.glossy_text_shadow (@shleft: 0, @shtop: 1pt, @shpenumbra: 4pt, @shrgba: rgba(0,0,0,0.9),
+                     @gleft: 0, @gtop: -1pt, @gpenumbra: 0, @grgba: rgba(255,255,255,0.9)) {
+    text-shadow: @gleft @gtop @gpenumbra @grgba,
+                 @shleft @shtop @shpenumbra @shrgba;
+}
+
+.box_shadow (@left: 0, @top: 1pt, @penumbra: 4pt, @rgba: rgba(0,0,0,0.9)) {
+    -moz-box-shadow: @left @top @penumbra @rgba;
+    -webkit-box-shadow: @left @top @penumbra @rgba;
+    box-shadow: @left @top @penumbra @rgba;
+}
+
+
+.glossy_box_shadow (@shleft: 0, @shtop: 1pt, @shpenumbra: 4pt, @shrgba: rgba(0,0,0,0.9),
+                     @gleft: 0, @gtop: -1pt, @gpenumbra: 0, @grgba: rgba(255,255,255,0.9)) {
+    -moz-box-shadow: @gleft @gtop @gpenumbra @grgba,
+                @shleft @shtop @shpenumbra @shrgba;
+    -webkit-box-shadow: @gleft @gtop @gpenumbra @grgba,
+                @shleft @shtop @shpenumbra @shrgba;
+    box-shadow: @gleft @gtop @gpenumbra @grgba,
+                @shleft @shtop @shpenumbra @shrgba;
+}
+
+.no_select () {
+    -moz-user-select: ignore;
+    -webkit-user-select: ignore;
+}
+
+.selectable () {
+    -moz-user-select: true;
+    -webkit-user-select: true;
+}
+
+body {
+    /*background: #ccc;*/
+    padding: 0;
+    margin: 0;
+    border-style: none;
+    font-family: 'Droid Sans Mono','DejaVu Sans Mono', 'Courier New';
+}
+
+.msg-bar {
+    margin: 0;
+    bottom: 0;
+}
+
+.msg-input {
+    .top_left_border_radius(0);
+    .top_right_border_radius(0);
+    height: 30pt;
+    font-size: 12pt;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+.status-msg {
+    .text_shadow(0,1pt,1pt, rgba(0,0,0,0.5));
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 252;
+
+    height: 1.5em;
+
+    background: rgba(0,0,0,0.5);
+    margin: 0;
+    font-size: 2.5em;
+    text-align: center;
+    float: left;
+    left: 0;
+    width: 100%;
+    color: #ddd;
+}
+
+.join-form {
+    background: rgba(0,0,0,0.5);
+    position: fixed;
+    top: 1.5em;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 252;
+    font-size: 2.5em;
+    text-align: center;
+    padding-top: 0.25em;
+}
+
+.name {
+    .rounded_corners(4pt);
+    .box_shadow(0,1pt,1pt, rgba(0,0,0,0.5));
+    font-size: 0.75em;
+    text-align: center;
+    width: 18em;
+}
+
+form {
+    margin: 0;
+}
+
+input {
+    background: #ccc;
+    border-width: 0;
+    clear: both;
+    margin: 0;
+    outline-width: 0;
+    padding: 0.5em;
+}
+
+input:focus {
+    background: #eee;
+}
+
+input[disabled='disabled'] {
+    background: #ccc;
+    color: #555;
+}
+
+
+.msgs { 
+    list-style-type: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    top: 0;
+    bottom: 30pt;
+    position: absolute;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: #666;
+    color: #fff;
+}
+
+.msgs li {
+    .text_shadow(0,-1pt,0,rgba(0,0,0,0.6));
+    line-height: 1.4em;
+    padding-left: 0.4em;
+}
+
+body.disabled {
+    background: #ccc;
+    color: #555;
+}
+
+.timestamp {
+    color: #aaa;
+    padding-right: 0.5em;
+}
+
+.msgs.timestamps-off li .timestamp {
+    display: none;
+}
+
+li.joined, li.left {
+    background: #777;
+}
+
+.joined-name, .left-name {
+    font-style: italic;
+    padding-right: 0.5em;
+}
+
+.msg-name {
+    font-weight: bold;
+    padding-right: 0.66em;
+}
+
+.clickable-name {
+    cursor: pointer;
+}
+
+.clickable-name:hover {
+    .text_shadow(0,0,0,rgba(0,0,0,0.0));
+    text-decoration: underline;
+}
+
+.clickable-name:active {
+    .text_shadow(0,-1pt,0,rgba(0,0,0,0.6));
+}
+
+.cmd-msg {
+    color: #eee;
+    background: #777;
+}
+
+.cmd-msg.err {
+    color: #fff;
+    background: #722;
+}
+
+.attn {
+    background: #772;
+}
