@@ -207,7 +207,7 @@ VCHAT = function (container, socket) {
     // UI BEHAVIOR
     msgHistory = [];
     currentMsg = '';
-    this.msgHistoryPos = 0;
+    msgHistoryPos = 0;
 
     // Expose some UI behavioral variables:
     this.msgHistory = msgHistory;
@@ -296,34 +296,32 @@ VCHAT = function (container, socket) {
     // COMMANDS
     /////////////////////////////////////////////////////////////////////
     
-    /*
     $(msg_text).keydown(function (e) {
-        switch (e.keyCode) {
-        case 38: // UP
-            if (this.msgHistoryPos >= msgHistory.length) {
-                currentMsg = $(msg_text).val();
+        if (e.keyCode != 13) {
+            var oldPos = msgHistoryPos,
+                upOrDownWasPressed = true;
+            switch (e.keyCode) {
+            case 38: // UP
+                msgHistoryPos = msgHistoryPos <= 0 ? 0 : msgHistoryPos - 1;
+                break;
+            case 40: // DOWN
+                msgHistoryPos = msgHistoryPos >= msgHistory.length - 1 ? msgHistory.length - 1 : msgHistoryPos + 1;
+                break;
+            default:
+                upOrDownWasPressed = false;
             }
-            this.msgHistoryPos = this.msgHistoryPos <= 0 ? 0 : this.msgHistoryPos - 1;
-            $(msg_text).focus();
-            $(msg_text).val(msgHistory[this.msgHistoryPos]);
-            return false;
-        case 40: // DOWN
-            if (this.msgHistoryPos <= msgHistory.length) {
-                this.msgHistoryPos = this.msgHistoryPos >= msgHistory.length ?
-                    msgHistory.length
-                    : this.msgHistoryPos + 1;
-                $(msg_text).focus();
-                $(msg_text).val(msgHistory[this.msgHistoryPos]);
-            } else {
-                $(msg_text).focus();
-                $(msg_text).val(currentMsg);
+
+            setTimeout(function () {
+                msgHistory[msgHistoryPos] = $(msg_text).val();
+            }, 0);
+
+            if (oldPos != msgHistoryPos) {
+                $(msg_text).val(msgHistory[msgHistoryPos]);
             }
-            return false;
-        default:
-            currentMsg = $(msg_text).val();
-        } 
+
+            return !upOrDownWasPressed;
+        }
     });
-    */
 
     $(name_text).keypress(function (e) {
         if (e.which == 32 ||// Ignore spaces
@@ -353,7 +351,8 @@ VCHAT = function (container, socket) {
         } else {
             mocket.send('msg', $(msg_text).val());
         }
-        msgHistoryPos = msgHistory.push($(msg_text).val());
+        msgHistory[msgHistory.length - 1] = $(msg_text).val();
+        msgHistoryPos = msgHistory.push('') - 1;
         $(msg_text).val('');
         return false;
     });
