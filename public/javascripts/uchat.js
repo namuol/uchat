@@ -18,17 +18,16 @@
     _
     setTimeout*/
 
-var VCHAT = {};
+var UCHAT = {};
 
 if (typeof module !== 'undefined') { 
-    module.exports = VCHAT;
+    module.exports = UCHAT;
 }
 
-VCHAT = function (container, socket) {
+UCHAT = function (container, socket) {
     var status_msg,
         join_form,
         name_text,
-        chat_panel,
         msgs,
         msg_bar,
         msg_form,
@@ -39,15 +38,19 @@ VCHAT = function (container, socket) {
         commands,
         mocket,
         myName,
-        whoIsHere = [];
+        whoIsHere = [],
+        roomName,
+        userMsg,
+        userError,
+        tryConnect;
 
     status_msg = document.createElement('div');
     $(status_msg).addClass('status-msg');
-    $(container).append(status_msg);
+    //$(container).append(status_msg);
 
     join_form = document.createElement('form');
     $(join_form).addClass('join-form');
-    $(container).append(join_form);
+    //$(container).append(join_form);
 
     name_text = document.createElement('input');
     $(name_text).attr('type', 'text');
@@ -56,18 +59,12 @@ VCHAT = function (container, socket) {
     $(name_text).addClass('name');
     $(join_form).append(name_text);
 
-    chat_panel = document.createElement('div');
-    $(chat_panel).addClass('chat-panel');
-    $(container).append(chat_panel);
-
     msgs = document.createElement('ul');
     $(msgs).addClass('msgs');
-    $(chat_panel).append(msgs);
     $(msgs).addClass('timestamps-off');
 
     msg_bar = document.createElement('div');
     $(msg_bar).addClass('msg-bar');
-    $(chat_panel).append(msg_bar);
 
     msg_form = document.createElement('form');
     $(msg_form).addClass('msg-form');
@@ -82,7 +79,6 @@ VCHAT = function (container, socket) {
     this.status_msg = status_msg;
     this.join_form = join_form;
     this.name_text = name_text;
-    this.chat_panel = chat_panel;
     this.msgs = msgs;
     this.msg_bar = msg_bar;
     this.msg_form = msg_form;
@@ -93,7 +89,7 @@ VCHAT = function (container, socket) {
     ///////////////////////////////////////////////////////////////////////////
     // UTILITY FUNCTIONS
 
-    function userMsg(msg, tmpl) {
+    this.userMsg = userMsg = function userMsg(msg, tmpl) {
         var jtpl, txt;
         tmpl = tmpl || '#cmd-jtpl';
         jtpl = $.createTemplate($(tmpl).val());
@@ -102,11 +98,11 @@ VCHAT = function (container, socket) {
         
         $(msgs)[0].scrollTop = $(msgs)[0].scrollHeight;
         $(msg_text).focus();
-    }
+    };
 
-    function userError(msg) {
+    this.userError = userError = function userError(msg) {
         userMsg(msg, '#cmd-err-jtpl');
-    }
+    };
 
     function directedAtYou(text) {
         return (text + ' ').toUpperCase().indexOf(('@' + myName + ' ').toUpperCase()) >= 0;
@@ -130,7 +126,7 @@ VCHAT = function (container, socket) {
     }
     this.timeString = timeString;
 
-    function tryConnect(attemptNumber) {
+    this.tryConnect = tryConnect = function tryConnect(attemptNumber) {
         if (!socket.connected) {
             if (typeof attemptNumber === 'undefined') {
                 attemptNumber = 0;
@@ -151,7 +147,7 @@ VCHAT = function (container, socket) {
                 }
             }, socket.options.connectTimeout + 25);
         }
-    }
+    };
 
     function tryJoin() {
         var joiner = MULTIO.listen(socket);
@@ -159,11 +155,12 @@ VCHAT = function (container, socket) {
         joiner.on('joinSuccess', function (yourName) {
             $(status_msg).hide();
             $(join_form).hide();
-            $(chat_panel).show();
             $(msg_text).attr('disabled', false);
             $(msg_text).blur();
             $(msg_text).focus();
             myName = yourName;
+            whoIsHere.push(myName);
+            userMsg('You joined as "' + myName + '".');
         });
 
         joiner.on('nameTaken', function () {
@@ -187,16 +184,21 @@ VCHAT = function (container, socket) {
     ///////////////////////////////////////////////////////////////////////////
 
     socket.on('connect', function () {
-        if (typeof myName === 'undefined') {
-            $(status_msg).html('who are you?');
-            $(status_msg).show();
-            $(name_text).show();
-            $(name_text).focus();
-            $(name_text).attr('disabled', false);
-        } else {
-            $(name_text).hide();
-            tryJoin();
-        }
+        mocket.send('enter', document.location.hash.substring(1));
+        mocket.on('entered', function (roomNameIn) {
+            roomName = roomNameIn;
+
+            if (typeof myName === 'undefined') {
+                $(status_msg).html('who are you?');
+                $(status_msg).show();
+                $(name_text).show();
+                $(name_text).focus();
+                $(name_text).attr('disabled', false);
+            } else {
+                $(name_text).hide();
+                tryJoin();
+            }
+        });
     });
 
     tryConnect();
@@ -361,6 +363,8 @@ VCHAT = function (container, socket) {
         whoIsHere = [];
         $(msgs).hide();
         $(msgs).html('');
+        userMsg('Welcome to #' + roomName + '.');
+        document.location.hash = '#' + roomName;
     });
 
     mocket.on('logEnd', function () {
@@ -407,14 +411,6 @@ VCHAT = function (container, socket) {
         whoIsHere = _.without(whoIsHere, name);
     });
     
-    socket.on('disconnect', function () {
-        userError('Disconnected!');
-        $(msg_text).attr('disabled', 'disabled');
-        $(join_form).show();
-        $(name_text).hide();
-        $(status_msg).show();
-        tryConnect();
-    });
 
 
     return this;

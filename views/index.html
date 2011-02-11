@@ -5,31 +5,12 @@
         <script src='http://jtemplates.tpython.com/jquery-jtemplates.js'></script>
         <script src='/javascripts/underscore.js'></script>
         <script src='/javascripts/multio.js'></script>
-        <script src='/javascripts/vchat.js'></script>
+        <script src='/javascripts/uchat.js'></script>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Sans+Mono">
         <link rel='stylesheet' type='text/css' href='/stylesheets/style.css' />
     </head>
     <body>
         <div id='wrapper'>
-            <!--
-            <div class='status-msg'>
-            </div>
-
-            <form class='join-form'>
-                <input class='name' type='text' />
-            </form>
-
-            <div class='chat-panel'> 
-                <ul class='msgs'>
-                </ul>
-
-                <div class='msg-bar'>
-                    <form class='msg-form'>
-                        <input class='msg-input' type='text' />
-                    </form>
-                </div>
-            </div>
-            -->
         </div>
 
         <textarea id='joined-jtpl' style='display:none'>
@@ -54,7 +35,21 @@
 
         <script type='text/javascript'>
             var socket = new io.Socket(),
-                u = VCHAT($('#wrapper'), socket);
+                u = UCHAT($('#wrapper'), socket);
+            $('#wrapper').append(u.status_msg);
+            $('#wrapper').append(u.join_form);
+            $('#wrapper').append(u.msgs);
+            $('#wrapper').append(u.msg_bar);
+
+            socket.on('disconnect', function () {
+                u.userError('Disconnected!');
+                $(u.msg_text).attr('disabled', 'disabled');
+                $(u.join_form).show();
+                $(u.name_text).hide();
+                $(u.status_msg).show();
+                u.tryConnect();
+            });
+
         </script>
     </body>
 </html>
