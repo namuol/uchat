@@ -278,6 +278,17 @@ UCHAT = function (container, socket) {
         func: whoami
     };
 
+    commands.stats = {
+        usage: '/stats ............. display some basic global statistics',
+        func: function () {
+            mocket.send('stats');
+        }
+    };
+    
+    mocket.on('stats', function (stats) {
+        userMsg(stats.clientCount + ' users using ' + stats.roomCount + ' rooms.');
+    });
+
     function tryToDoCommand(msg) {
         var cmd = msg.substring(1),
             cmdName = cmd.split(' ')[0],
@@ -411,8 +422,6 @@ UCHAT = function (container, socket) {
         whoIsHere = _.without(whoIsHere, name);
     });
     
-
-
     return this;
 };
 

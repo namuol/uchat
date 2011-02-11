@@ -27,8 +27,11 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
     var clientHTML = data,
     baseServer,
     server,
+    socket,
     mocket,
-    rooms = {};
+    rooms = {},
+    roomCount = 0,
+    clientCount = 0;
 
     baseServer = http.createServer(function (req, res) {
         res.writeHead(200, {'Content-Type': 'text/html'});
@@ -44,12 +47,13 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
 
     server.listen(config.port);
     console.log('Server listening on port ' + config.port + '.');
-
-    mocket = mio.listen(io.listen(server));
+    socket = io.listen(server);
+    mocket = mio.listen(socket);
 
     ////////////////////////////////////////////
     // CLIENT CONNECTS...
     mocket.on('$connection', function (client) {
+        clientCount += 1;
 
         ////////////////////////////////////////
         // CLIENT ENTERS A ROOM...
@@ -61,8 +65,10 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                 // Room by this name does't yet exist, so create one:
                 rooms[roomName] = {
                     clients: {},
+                    clientCount: 0,
                     log: []
                 };
+                roomCount += 1;
             }
 
             client.send('entered', roomName);
@@ -108,6 +114,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     client.send('joinSuccess', name);
                     bcastAndLog('joined', name, (new Date()));
                     room.clients[name] = client;
+                    room.clientCount += 1;
                     console.log('"' + name + '" joined!');
                 }
             });
@@ -122,6 +129,13 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                 }
             });
 
+            client.on('stats', function () {
+                client.send('stats', {
+                    roomCount: roomCount,
+                    clientCount: clientCount
+                });
+            });
+            
             //////////////////////////////////////
             // CLIENT DISCONNECTS...
             client.on('$disconnect', function () {
@@ -129,6 +143,12 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     bcastAndLog('left', name, (new Date()));
                     delete room.clients[name];
                     console.log('"' + name + '" left!');
+                    clientCount -= 1;
+                    room.clientCount -= 1;
+                    if (room.clientCount <= 0) {
+                        delete rooms[roomName];
+                        roomCount -= 1;
+                    }
                 }
             });
         });
