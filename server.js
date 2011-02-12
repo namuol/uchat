@@ -139,11 +139,11 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             //////////////////////////////////////
             // CLIENT DISCONNECTS...
             client.on('$disconnect', function () {
+                clientCount -= 1;
                 if (typeof room.clients[name] !== 'undefined') {
                     bcastAndLog('left', name, (new Date()));
                     delete room.clients[name];
                     console.log('"' + name + '" left!');
-                    clientCount -= 1;
                     room.clientCount -= 1;
                     if (room.clientCount <= 0) {
                         delete rooms[roomName];
