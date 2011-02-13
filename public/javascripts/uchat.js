@@ -106,7 +106,8 @@ UCHAT = function (container, socket) {
     };
 
     function directedAtYou(text) {
-        return (text + ' ').toUpperCase().indexOf(('@' + myName + ' ').toUpperCase()) >= 0;
+        return (text + ' ').toUpperCase().indexOf(('@' + myName + ' ').toUpperCase()) >= 0 ||
+               (text + ' ').toUpperCase().indexOf(('!' + myName + ' ').toUpperCase()) >= 0;
     }
     
     function replaceURLWithHTMLLinks(text) {
@@ -115,7 +116,7 @@ UCHAT = function (container, socket) {
     }
 
     function insertClickableNames(text) {
-        return text.replace(/(@\S+)/ig, "<span class='clickable-name'>$1</span>");
+        return text.replace(/@(\S+)/ig, "@<span class='clickable-name'>$1</span>");
     }
 
     function insertClickableRoomLinks(text) {
@@ -236,7 +237,7 @@ UCHAT = function (container, socket) {
 
 
     $('.clickable-name').live('click', function () {
-        $(msg_text).val('@' + $(this).html() + ' ' + $(msg_text).val());
+        $(msg_text).val($(msg_text).val() + $(this).html() + ' ');
         $(msg_text).focus();
     });
 
