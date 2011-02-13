@@ -106,8 +106,8 @@ UCHAT = function (container, socket) {
     };
 
     function directedAtYou(text) {
-        return (text + ' ').toUpperCase().indexOf(('@' + myName + ' ').toUpperCase()) >= 0 ||
-               (text + ' ').toUpperCase().indexOf(('!' + myName + ' ').toUpperCase()) >= 0;
+        return (text + ' ').toUpperCase().indexOf(('!' + myName + ' ').toUpperCase()) >= 0 ||
+               (text + ' ').toUpperCase().indexOf(('>' + myName + ' ').toUpperCase()) >= 0;
     }
     
     function replaceURLWithHTMLLinks(text) {

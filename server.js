@@ -124,8 +124,33 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             // CLIENT SENDS A MESSAGE...
             client.on('msg', function (msg) {
                 if (typeof room.clients[name] !== 'undefined') {
-                    var args = [];
-                    bcastAndLog('msg', msg, name, (new Date()));
+                    if (typeof msg !== 'string') {
+                        return;
+                    }
+                    var matches = msg.match(/>(\S+)/ig),
+                        i,
+                        username,
+                        timestamp = (new Date()),
+                        private_message = false;
+
+                    if (matches && matches.length > 0) {
+                        for (i = 0; i < matches.length; i += 1) {
+                            username = matches[i].substring(1);
+                            if (typeof room.clients[username] !== 'undefined') {
+                                private_message = true;
+                                if (username != name) {
+                                    room.clients[username].send('msg', msg, name, timestamp);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!private_message) {
+                        bcastAndLog('msg', msg, name, (new Date()));
+                    } else {
+                        client.send('msg', msg, name, timestamp);
+                    }
+
                     console.log(name + ': ' + msg);
                 }
             });
