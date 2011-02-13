@@ -9,6 +9,7 @@
     maxerr: 50,
     indent: 4 */
 /*global
+    setTimeout,
     console,
     __dirname,
     require*/
@@ -62,7 +63,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
 
             if (typeof roomName !== 'undefined' &&
                 typeof rooms[roomName] === 'undefined') {
-                // Room by this name does't yet exist, so create one:
+                // Room by this name doesn't yet exist, so create one:
                 rooms[roomName] = {
                     clients: {},
                     clientCount: 0,
@@ -72,6 +73,8 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             }
 
             client.send('entered', roomName);
+
+            room = rooms[roomName];
 
             function bcastAndLog() {
                 var c;
@@ -87,8 +90,6 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                 }
             }
 
-            room = rooms[roomName];
-
             // Send a log of recent events to the client:
             client.send('logBegin');
             for (i = 0; i < room.log.length; i += 1)
@@ -102,7 +103,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             client.on('join', function (nameIn) {
                 if (typeof room.clients[nameIn] !== 'undefined') {
                     client.send('nameTaken');
-                } else {
+                } else if (nameIn) {
                     nameIn = nameIn.replace(' ', '');
                     nameIn = nameIn.replace('@', '');
                     nameIn = $.trim(nameIn);
@@ -135,7 +136,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     clientCount: clientCount
                 });
             });
-            
+
             //////////////////////////////////////
             // CLIENT DISCONNECTS...
             client.on('$disconnect', function () {
@@ -145,11 +146,13 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     delete room.clients[name];
                     console.log('"' + name + '" left!');
                     room.clientCount -= 1;
+                }
+                setTimeout(function () {
                     if (room.clientCount <= 0) {
                         delete rooms[roomName];
                         roomCount -= 1;
                     }
-                }
+                }, config.empty_room_life_span * 1000);
             });
         });
     });

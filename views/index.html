@@ -33,6 +33,15 @@
             <li class='cmd-msg err'>{$T.msg}</li>
         </textarea>
 
+        <textarea id='listusers-jtpl' style='display:none'>
+            <li class='cmd-msg'>People in this room:</li>
+            {#foreach $T.usernames as username}
+            <li class='cmd-msg listusers-user'><span class='clickable-name'>{$T.username}</span></li>
+            {#else}
+            <li class='cmd-msg'>None</li>
+            {/#for}
+        </textarea>
+
         <script type='text/javascript'>
             var socket = new io.Socket(),
                 u = UCHAT($('#wrapper'), socket);

@@ -89,11 +89,12 @@ UCHAT = function (container, socket) {
     ///////////////////////////////////////////////////////////////////////////
     // UTILITY FUNCTIONS
 
-    this.userMsg = userMsg = function userMsg(msg, tmpl) {
+    this.userMsg = userMsg = function userMsg(data, tmpl) {
         var jtpl, txt;
+        data = typeof data === 'string' ? {msg: data} : data;
         tmpl = tmpl || '#cmd-jtpl';
         jtpl = $.createTemplate($(tmpl).val());
-        txt = $.processTemplateToText(jtpl, {msg: msg});
+        txt = $.processTemplateToText(jtpl, data);
         $(msgs).append(txt);
         
         $(msgs)[0].scrollTop = $(msgs)[0].scrollHeight;
@@ -109,8 +110,16 @@ UCHAT = function (container, socket) {
     }
     
     function replaceURLWithHTMLLinks(text) {
-        var exp = /(\b(https?|ftp|file):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
+        var exp = /(\b(https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
         return text.replace(exp, "<a href='$1'>$1</a>"); 
+    }
+
+    function insertClickableNames(text) {
+        return text.replace(/(@\S+)/ig, "<span class='clickable-name'>$1</span>");
+    }
+
+    function insertClickableRoomLinks(text) {
+        return text.replace(/(#[A-Z]*)/ig, "<a href='$1' class='room-link'>$1</a>");
     }
 
     function timeString(time) {
@@ -150,9 +159,7 @@ UCHAT = function (container, socket) {
     };
 
     function tryJoin() {
-        var joiner = MULTIO.listen(socket);
-
-        joiner.on('joinSuccess', function (yourName) {
+        mocket.on('joinSuccess', function (yourName) {
             $(status_msg).hide();
             $(join_form).hide();
             $(msg_text).attr('disabled', false);
@@ -161,29 +168,29 @@ UCHAT = function (container, socket) {
             myName = yourName;
             whoIsHere.push(myName);
             userMsg('You joined as "' + myName + '".');
+            mocket.on('joinSuccess', undefined);
+            mocket.on('nameTaken', undefined);
+            mocket.on('nameTooShort', undefined);
         });
 
-        joiner.on('nameTaken', function () {
+        mocket.on('nameTaken', function () {
             myName = undefined;
             $(name_text).show();
             $(name_text).focus();
             $(status_msg).html('try something else');
         });
 
-        joiner.on('nameTooShort', function () {
+        mocket.on('nameTooShort', function () {
             myName = undefined;
             $(name_text).show();
             $(name_text).focus();
             $(status_msg).html('that\'s too short');
         });
 
-        joiner.send('join', myName);
+        mocket.send('join', myName);
     }
 
-    // UTILITY FUNCTIONS
-    ///////////////////////////////////////////////////////////////////////////
-
-    socket.on('connect', function () {
+    function tryEnter() {
         mocket.send('enter', document.location.hash.substring(1));
         mocket.on('entered', function (roomNameIn) {
             roomName = roomNameIn;
@@ -198,7 +205,16 @@ UCHAT = function (container, socket) {
                 $(name_text).hide();
                 tryJoin();
             }
+            mocket.on('entered', undefined);
         });
+    }
+
+
+    // UTILITY FUNCTIONS
+    ///////////////////////////////////////////////////////////////////////////
+
+    socket.on('connect', function () {
+        tryEnter();
     });
 
     tryConnect();
@@ -224,6 +240,13 @@ UCHAT = function (container, socket) {
         $(msg_text).focus();
     });
 
+    $('a.room-link').live('click', function () {
+        setTimeout(function () {
+            socket.disconnect();
+        }, 25);
+        return true;
+    });
+
     /////////////////////////////////////////////////////////////////////
     // COMMANDS
     commands = {};
@@ -241,11 +264,7 @@ UCHAT = function (container, socket) {
     }
 
     function listusers() {
-        userMsg('People in this room:'); 
-        for (var i = 0; i < whoIsHere.length; i += 1)
-        {
-            userMsg("--" + whoIsHere[i]);
-        }
+        userMsg({usernames: whoIsHere}, '#listusers-jtpl'); 
     }
 
     function timestamps(onOrOff) {
@@ -393,6 +412,9 @@ UCHAT = function (container, socket) {
             directedAtYou: directedAtYou(msg)
         });
 
+        output = replaceURLWithHTMLLinks(output);
+        output = insertClickableNames(output);
+        output = insertClickableRoomLinks(output);
 
         $(msgs).append(replaceURLWithHTMLLinks(output));
         
