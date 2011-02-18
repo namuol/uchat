@@ -182,7 +182,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     console.log('"' + name + '" left!');
                 }
                 setTimeout(function () {
-                    if (typeof room.clients[name] !== 'undefined' &&
+                    if (typeof rooms[roomName] !== 'undefined' &&
                         room.clientCount() <= 0) {
                         delete rooms[roomName];
                     }
