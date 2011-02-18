@@ -48,7 +48,8 @@ UCHAT = function (container, socket) {
         unreadCount = 0,
         msgAlt = false,
         userSettings = {
-            alert: 'all'
+            timestamps: $.Storage.get('timestamps') || 'off',
+            alert: $.Storage.get('alert') || 'all'
         };
 
     status_msg = document.createElement('div');
@@ -68,7 +69,7 @@ UCHAT = function (container, socket) {
 
     msgs = document.createElement('ul');
     $(msgs).addClass('msgs');
-    $(msgs).addClass('timestamps-off');
+    $(msgs).addClass('timestamps-' + userSettings.timestamps);
 
     msg_bar = document.createElement('div');
     $(msg_bar).addClass('msg-bar');
@@ -288,13 +289,25 @@ UCHAT = function (container, socket) {
     }
 
     function timestamps(onOrOff) {
-        if (onOrOff == 'on') {
-            $(msgs).removeClass('timestamps-off');
-        } else if (onOrOff == 'off') {
-            $(msgs).addClass('timestamps-off');
-        } else {
-            userError('Use "on" or "off"');
+        if (typeof onOrOff !== 'string') {
+            onOrOff = '';
         }
+
+        onOrOff = onOrOff.toLowerCase();
+
+        switch (onOrOff) {
+        case 'on':
+            $(msgs).removeClass('timestamps-off');
+            break;
+        case 'off':
+            $(msgs).addClass('timestamps-off');
+            break;
+        default:
+            userError('Use "on" or "off"');
+            return;
+        }
+        userSettings.timestamps = onOrOff;
+        $.Storage.set(userSettings);
     }
 
     commands.help = {
@@ -337,6 +350,7 @@ UCHAT = function (container, socket) {
             case 'none':
                 userMsg('Alert mode: ' + str);
                 userSettings.alert = str;
+                $.Storage.set(userSettings);
                 break;
             default:
                 userError('Use "me", "all", or "none"');
