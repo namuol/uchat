@@ -30,9 +30,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
     server,
     socket,
     mocket,
-    rooms = {},
-    roomCount = 0,
-    clientCount = 0;
+    rooms = {};
 
     baseServer = http.createServer(function (req, res) {
         res.writeHead(200, {'Content-Type': 'text/html'});
@@ -51,25 +49,39 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
     socket = io.listen(server);
     mocket = mio.listen(socket);
 
+    function objectItemCount(objects) {
+        var objectName, count = 0;
+        for (objectName in objects) {
+            if (objects.hasOwnProperty(objectName)) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
     ////////////////////////////////////////////
     // CLIENT CONNECTS...
     mocket.on('$connection', function (client) {
-        clientCount += 1;
-
         ////////////////////////////////////////
         // CLIENT ENTERS A ROOM...
         client.on('enter', function (roomName) {
             var room, name, i;
+            if (typeof roomName !== 'string') {
+                return;
+            }
+
+            roomName = roomName.match(/^([A-Z0-9\-_!])*/gi)[0];
 
             if (typeof roomName !== 'undefined' &&
                 typeof rooms[roomName] === 'undefined') {
                 // Room by this name doesn't yet exist, so create one:
                 rooms[roomName] = {
                     clients: {},
-                    clientCount: 0,
+                    clientCount: function () {
+                        return objectItemCount(this.clients);
+                    },
                     log: []
                 };
-                roomCount += 1;
             }
 
             client.send('entered', roomName);
@@ -115,7 +127,6 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     client.send('joinSuccess', name);
                     bcastAndLog('joined', name, (new Date()));
                     room.clients[name] = client;
-                    room.clientCount += 1;
                     console.log('"' + name + '" joined!');
                 }
             });
@@ -157,25 +168,23 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
 
             client.on('stats', function () {
                 client.send('stats', {
-                    roomCount: roomCount,
-                    clientCount: clientCount
+                    roomCount: objectItemCount(rooms),
+                    clientCount: objectItemCount(socket.clients)
                 });
             });
 
             //////////////////////////////////////
             // CLIENT DISCONNECTS...
             client.on('$disconnect', function () {
-                clientCount -= 1;
                 if (typeof room.clients[name] !== 'undefined') {
                     bcastAndLog('left', name, (new Date()));
                     delete room.clients[name];
                     console.log('"' + name + '" left!');
-                    room.clientCount -= 1;
                 }
                 setTimeout(function () {
-                    if (room.clientCount <= 0) {
+                    if (typeof room.clients[name] !== 'undefined' &&
+                        room.clientCount() <= 0) {
                         delete rooms[roomName];
-                        roomCount -= 1;
                     }
                 }, config.empty_room_life_span * 1000);
             });

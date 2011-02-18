@@ -13,6 +13,7 @@
     MULTIO
     module
     document
+    window
     $
     jQuery
     _
@@ -42,7 +43,13 @@ UCHAT = function (container, socket) {
         roomName,
         userMsg,
         userError,
-        tryConnect;
+        tryConnect,
+        blurred,
+        unreadCount = 0,
+        msgAlt = false,
+        userSettings = {
+            alert: 'all'
+        };
 
     status_msg = document.createElement('div');
     $(status_msg).addClass('status-msg');
@@ -120,7 +127,7 @@ UCHAT = function (container, socket) {
     }
 
     function insertClickableRoomLinks(text) {
-        return text.replace(/(#[A-Z]*)/ig, "<a href='$1' class='room-link'>$1</a>");
+        return text.replace(/([\s+|>])(#[A-Z0-9\-_!]*)/ig, "$1<a href='$2' class='room-link'>$2</a>");
     }
 
     function timeString(time) {
@@ -196,6 +203,9 @@ UCHAT = function (container, socket) {
         mocket.on('entered', function (roomNameIn) {
             roomName = roomNameIn;
 
+            document.location = "#" + roomName;
+            document.title = "#" + roomName;
+
             if (typeof myName === 'undefined') {
                 $(status_msg).html('who are you?');
                 $(status_msg).show();
@@ -234,8 +244,6 @@ UCHAT = function (container, socket) {
     $(msg_text).attr('autocomplete', 'off');
     $(msg_text).attr('disabled', 'disabled');
 
-
-
     $('.clickable-name').live('click', function () {
         $(msg_text).val($(msg_text).val() + $(this).html() + ' ');
         $(msg_text).focus();
@@ -247,6 +255,17 @@ UCHAT = function (container, socket) {
         }, 25);
         return true;
     });
+
+    // Page loses focus:
+    window.onblur = function () {
+        blurred = true;
+    };
+
+    // Page regains focus:
+    window.onfocus = function () {
+        blurred = false;
+        unreadCount = 0;
+    };
 
     /////////////////////////////////////////////////////////////////////
     // COMMANDS
@@ -302,6 +321,26 @@ UCHAT = function (container, socket) {
         usage: '/stats ............. display some basic global statistics',
         func: function () {
             mocket.send('stats');
+        }
+    };
+
+    commands.alert = {
+        usage: '/alert me|all|none.. specify when you would like to recieve alerts if the window is not focused',
+        func: function (str) {
+            if (typeof str !== 'string') {
+                str = '';
+            }
+            str = str.toLowerCase();
+            switch (str) {
+            case 'me':
+            case 'all':
+            case 'none':
+                userMsg('Alert mode: ' + str);
+                userSettings.alert = str;
+                break;
+            default:
+                userError('Use "me", "all", or "none"');
+            }
         }
     };
     
@@ -404,18 +443,49 @@ UCHAT = function (container, socket) {
     });
 
     mocket.on('msg', function (msg, name, time) {
-        var jtpl, output;
+        var jtpl, output, atYou = directedAtYou(msg);
         jtpl = jQuery.createTemplate($('#msg-jtpl').val());
+        msgAlt = !msgAlt;
         output = jQuery.processTemplateToText(jtpl, {
             name: name,
             msg: msg,
             time: time,
-            directedAtYou: directedAtYou(msg)
+            directedAtYou: atYou,
+            alt: msgAlt
         });
+        
+        if (blurred && (userSettings.alert === 'all' || 
+            (userSettings.alert === 'me'  && atYou))) {
+            unreadCount += 1;
+            if (unreadCount == 1) {
+                (function () {
+
+                    var a, b;
+                    a = function () {
+                        if (blurred) {
+                            document.title = '--#' + roomName + ' (' + unreadCount + ')--';
+                            setTimeout(b, 500);
+                        } else {
+                            document.title = '#' + roomName;
+                        }
+                    };
+
+                    b = function () {
+                        if (blurred) {
+                            document.title = '__#' + roomName + ' (' + unreadCount + ')__';
+                            setTimeout(a, 500);
+                        } else {
+                            document.title = '#' + roomName;
+                        }
+                    };
+                    a();
+                }());
+            }
+        }
 
         output = replaceURLWithHTMLLinks(output);
-        output = insertClickableNames(output);
         output = insertClickableRoomLinks(output);
+        output = insertClickableNames(output);
 
         $(msgs).append(replaceURLWithHTMLLinks(output));
         

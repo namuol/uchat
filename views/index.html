@@ -22,7 +22,7 @@
         </textarea>
 
         <textarea id='msg-jtpl' style='display:none'>
-            <li {#if $T.directedAtYou}class='attn'{#/if}><span class='timestamp'>{u.timeString($T.time)}</span><span class='msg-name clickable-name'>{$T.name}</span><span class='msg'>{$T.msg}</span></li>
+            <li class='{#if $T.directedAtYou}attn{#/if} {#if $T.alt}alt{#/if}'><span class='timestamp'>{u.timeString($T.time)}</span><span class='msg-name clickable-name'>{$T.name}</span><span class='msg'>{$T.msg}</span></li>
         </textarea>
 
         <textarea id='cmd-jtpl' style='display:none'>
@@ -53,10 +53,12 @@
             socket.on('disconnect', function () {
                 u.userError('Disconnected!');
                 $(u.msg_text).attr('disabled', 'disabled');
-                $(u.join_form).show();
-                $(u.name_text).hide();
-                $(u.status_msg).show();
-                u.tryConnect();
+                setTimeout(function () {
+                    $(u.join_form).show();
+                    $(u.name_text).hide();
+                    $(u.status_msg).show();
+                    u.tryConnect();
+                }, 500);
             });
 
         </script>
