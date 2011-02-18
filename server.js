@@ -76,9 +76,10 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                 typeof rooms[roomName] === 'undefined') {
                 // Room by this name doesn't yet exist, so create one:
                 rooms[roomName] = {
-                    clients: {},
+                    clients: [],
+                    joined: {},
                     clientCount: function () {
-                        return objectItemCount(this.clients);
+                        return objectItemCount(this.joined);
                     },
                     log: []
                 };
@@ -87,13 +88,13 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             client.send('entered', roomName);
 
             room = rooms[roomName];
+            room.clients.push(client);
 
             function bcastAndLog() {
-                var c;
-                for (c in room.clients) {
-                    if (typeof c !== 'undefined' &&
-                        room.clients.hasOwnProperty(c)) {
-                        room.clients[c].send.apply(room.clients[c], arguments);
+                var i;
+                for (i = 0; i < room.clients.length; i += 1) {
+                    if (typeof room.clients[i] !== 'undefined') {
+                        room.clients[i].send.apply(room.clients[i], arguments);
                     }
                 }
                 room.log.push(arguments);
@@ -113,7 +114,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             ///////////////////////////////////////////////
             // CLIENT TELLS US HIS/HER NAME...
             client.on('join', function (nameIn) {
-                if (typeof room.clients[nameIn] !== 'undefined') {
+                if (typeof room.joined[nameIn] !== 'undefined') {
                     client.send('nameTaken');
                 } else if (nameIn) {
                     nameIn = nameIn.replace(' ', '');
@@ -126,7 +127,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     name = nameIn;
                     client.send('joinSuccess', name);
                     bcastAndLog('joined', name, (new Date()));
-                    room.clients[name] = client;
+                    room.joined[name] = client;
                     console.log('"' + name + '" joined!');
                 }
             });
@@ -134,7 +135,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             /////////////////////////////////
             // CLIENT SENDS A MESSAGE...
             client.on('msg', function (msg) {
-                if (typeof room.clients[name] !== 'undefined') {
+                if (typeof room.joined[name] !== 'undefined') {
                     if (typeof msg !== 'string') {
                         return;
                     }
@@ -147,10 +148,10 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     if (matches && matches.length > 0) {
                         for (i = 0; i < matches.length; i += 1) {
                             username = matches[i].substring(1);
-                            if (typeof room.clients[username] !== 'undefined') {
+                            if (typeof room.joined[username] !== 'undefined') {
                                 private_message = true;
                                 if (username != name) {
-                                    room.clients[username].send('msg', msg, name, timestamp);
+                                    room.joined[username].send('msg', msg, name, timestamp);
                                 }
                             }
                         }
@@ -176,9 +177,10 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
             //////////////////////////////////////
             // CLIENT DISCONNECTS...
             client.on('$disconnect', function () {
-                if (typeof room.clients[name] !== 'undefined') {
+                if (typeof room.joined[name] !== 'undefined') {
                     bcastAndLog('left', name, (new Date()));
-                    delete room.clients[name];
+                    delete room.joined[name];
+                    room.clients = _.without(room.clients, room.joined[name]);
                     console.log('"' + name + '" left!');
                 }
                 setTimeout(function () {
