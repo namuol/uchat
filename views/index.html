@@ -26,6 +26,12 @@
             <li class='{#if $T.directedAtYou}attn{#/if} {#if $T.alt}alt{#/if}'><span class='timestamp'>{u.timeString($T.time)}</span><span class='msg-name clickable-name'>{$T.name}</span><span class='msg'>{$T.msg}</span></li>
         </textarea>
 
+        <textarea id='me-msg-jtpl' style='display:none'>
+            <li class='me-msg {#if $T.directedAtYou}attn{#/if} {#if
+            $T.alt}alt{#/if}'><span
+            class='timestamp'>{u.timeString($T.time)}</span>*<span class='msg-name clickable-name'>{$T.name}</span><span class='msg'>{$T.msg.substring(4)}</span>*</li>
+        </textarea>
+
         <textarea id='cmd-jtpl' style='display:none'>
             <li class='cmd-msg'>{$T.msg}</li>
         </textarea>

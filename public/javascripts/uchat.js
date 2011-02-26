@@ -117,6 +117,10 @@ UCHAT = function (container, socket) {
         return (text + ' ').toUpperCase().indexOf(('!' + myName + ' ').toUpperCase()) >= 0 ||
                (text + ' ').toUpperCase().indexOf(('>' + myName + ' ').toUpperCase()) >= 0;
     }
+
+    function isMeMsg(text) {
+        return text.substring(0, 3) === '/me';
+    }
     
     function replaceURLWithHTMLLinks(text) {
         var exp = /(\b(https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
@@ -357,6 +361,13 @@ UCHAT = function (container, socket) {
             }
         }
     };
+
+    commands.me = {
+        usage: '/me msg ............ say something in the first person, like some kind of weirdo',
+        func: function (msg_str) {
+            mocket.send('msg', '/me ' + msg_str);
+        }
+    };
     
     mocket.on('stats', function (stats) {
         userMsg(stats.clientCount + ' users using ' + stats.roomCount + ' rooms.');
@@ -364,12 +375,10 @@ UCHAT = function (container, socket) {
 
     function tryToDoCommand(msg) {
         var cmd = msg.substring(1),
-            cmdName = cmd.split(' ')[0],
-            cmdString,
+            cmdName = cmd.split(' ')[0].toLowerCase(),
             args;
         if (typeof commands[$.trim(cmdName)] === 'object' && 
             typeof commands[$.trim(cmdName)].func === 'function') {
-            cmdString = 'commands.' + cmdName + '.func(';
             args = _.without(_.rest(cmd.split(' ')), '').map(function (n) {
                 return n;
             });
@@ -457,8 +466,8 @@ UCHAT = function (container, socket) {
     });
 
     mocket.on('msg', function (msg, name, time) {
-        var jtpl, output, atYou = directedAtYou(msg);
-        jtpl = jQuery.createTemplate($('#msg-jtpl').val());
+        var jtpl, output, atYou = directedAtYou(msg), meMsg = isMeMsg(msg);
+        jtpl = jQuery.createTemplate($(meMsg ? '#me-msg-jtpl' : '#msg-jtpl').val());
         msgAlt = !msgAlt;
         output = jQuery.processTemplateToText(jtpl, {
             name: name,

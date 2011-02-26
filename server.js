@@ -103,13 +103,6 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                 }
             }
 
-            // Send a log of recent events to the client:
-            client.send('logBegin');
-            for (i = 0; i < room.log.length; i += 1)
-            {
-                client.send.apply(client, room.log[i]);
-            }
-            client.send('logEnd');
 
             ///////////////////////////////////////////////
             // CLIENT TELLS US HIS/HER NAME...
@@ -129,6 +122,14 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
                     bcastAndLog('joined', name, (new Date()));
                     room.joined[name] = client;
                     console.log('"' + name + '" joined!');
+
+                    // Send a log of recent events to the client:
+                    client.send('logBegin');
+                    for (i = 0; i < room.log.length; i += 1)
+                    {
+                        client.send.apply(client, room.log[i]);
+                    }
+                    client.send('logEnd');
                 }
             });
 
