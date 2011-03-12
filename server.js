@@ -15,13 +15,12 @@
     require*/
 
 var connect = require('connect'),
-    http    = require('http'),
     config  = require('./config'),
-    io      = require('socket.io'),
+    http    = require('http'),
     mio     = require('./support/multio/lib/multio'),
+    io      = require('socket.io'),
     fs      = require('fs'),
-    _       = require('underscore'),
-    $       = require('jquery');
+    uchat   = require('./lib/uchat');
 
 
 fs.readFile(__dirname + '/views/index.html', function (err, data) {
@@ -29,8 +28,7 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
     baseServer,
     server,
     socket,
-    mocket,
-    rooms = {};
+    mocket;
 
     baseServer = http.createServer(function (req, res) {
         res.writeHead(200, {'Content-Type': 'text/html'});
@@ -48,149 +46,11 @@ fs.readFile(__dirname + '/views/index.html', function (err, data) {
     console.log('Server listening on port ' + config.port + '.');
     socket = io.listen(server);
     mocket = mio.listen(socket);
-
-    function objectItemCount(objects) {
-        var objectName, count = 0;
-        for (objectName in objects) {
-            if (objects.hasOwnProperty(objectName)) {
-                count += 1;
+    uchat.listen(mocket, {
+        callbacks: {
+            'uchat-msg': function () {
+                return true;
             }
         }
-        return count;
-    }
-
-    ////////////////////////////////////////////
-    // CLIENT CONNECTS...
-    mocket.on('$connection', function (client) {
-        ////////////////////////////////////////
-        // CLIENT ENTERS A ROOM...
-        client.on('enter', function (roomName) {
-            var room, name, i;
-            if (typeof roomName !== 'string') {
-                return;
-            }
-
-            roomName = roomName.match(/^([A-Z0-9\-_!])*/gi)[0];
-
-            if (typeof roomName !== 'undefined' &&
-                typeof rooms[roomName] === 'undefined') {
-                // Room by this name doesn't yet exist, so create one:
-                rooms[roomName] = {
-                    clients: [],
-                    joined: {},
-                    clientCount: function () {
-                        return objectItemCount(this.joined);
-                    },
-                    log: []
-                };
-            }
-
-            client.send('entered', roomName);
-
-            room = rooms[roomName];
-            room.clients.push(client);
-
-            function bcastAndLog() {
-                var i;
-                for (i = 0; i < room.clients.length; i += 1) {
-                    if (typeof room.clients[i] !== 'undefined') {
-                        room.clients[i].send.apply(room.clients[i], arguments);
-                    }
-                }
-                room.log.push(arguments);
-                if (room.log.length > config.max_log_length) {
-                    room.log = _.tail(room.log);
-                }
-            }
-
-
-            ///////////////////////////////////////////////
-            // CLIENT TELLS US HIS/HER NAME...
-            client.on('join', function (nameIn) {
-                if (typeof room.joined[nameIn] !== 'undefined') {
-                    client.send('nameTaken');
-                } else if (nameIn) {
-                    nameIn = nameIn.replace(' ', '');
-                    nameIn = nameIn.replace('@', '');
-                    nameIn = $.trim(nameIn);
-                    if (nameIn.length < config.min_name_length) {
-                        client.send('nameTooShort'); 
-                        return;
-                    }
-                    name = nameIn;
-                    client.send('joinSuccess', name);
-                    bcastAndLog('joined', name, (new Date()));
-                    room.joined[name] = client;
-                    console.log('"' + name + '" joined!');
-
-                    // Send a log of recent events to the client:
-                    client.send('logBegin');
-                    for (i = 0; i < room.log.length; i += 1)
-                    {
-                        client.send.apply(client, room.log[i]);
-                    }
-                    client.send('logEnd');
-                }
-            });
-
-            /////////////////////////////////
-            // CLIENT SENDS A MESSAGE...
-            client.on('msg', function (msg) {
-                if (typeof room.joined[name] !== 'undefined') {
-                    if (typeof msg !== 'string') {
-                        return;
-                    }
-                    var matches = msg.match(/>(\S+)/ig),
-                        i,
-                        username,
-                        timestamp = (new Date()),
-                        private_message = false;
-
-                    if (matches && matches.length > 0) {
-                        for (i = 0; i < matches.length; i += 1) {
-                            username = matches[i].substring(1);
-                            if (typeof room.joined[username] !== 'undefined') {
-                                private_message = true;
-                                if (username != name) {
-                                    room.joined[username].send('msg', msg, name, timestamp);
-                                }
-                            }
-                        }
-                    }
-
-                    if (!private_message) {
-                        bcastAndLog('msg', msg, name, (new Date()));
-                    } else {
-                        client.send('msg', msg, name, timestamp);
-                    }
-
-                    console.log(name + ': ' + msg);
-                }
-            });
-
-            client.on('stats', function () {
-                client.send('stats', {
-                    roomCount: objectItemCount(rooms),
-                    clientCount: objectItemCount(socket.clients)
-                });
-            });
-
-            //////////////////////////////////////
-            // CLIENT DISCONNECTS...
-            client.on('$disconnect', function () {
-                if (typeof room.joined[name] !== 'undefined') {
-                    bcastAndLog('left', name, (new Date()));
-                    delete room.joined[name];
-                    room.clients = _.without(room.clients, room.joined[name]);
-                    console.log('"' + name + '" left!');
-                }
-                setTimeout(function () {
-                    if (typeof rooms[roomName] !== 'undefined' &&
-                        room.clientCount() <= 0) {
-                        delete rooms[roomName];
-                    }
-                }, config.empty_room_life_span * 1000);
-            });
-        });
-    });
+    }); 
 });

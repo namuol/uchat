@@ -172,7 +172,7 @@ UCHAT = function (container, socket) {
     };
 
     function tryJoin() {
-        mocket.on('joinSuccess', function (yourName) {
+        mocket.on('uchat-joinSuccess', function (yourName) {
             $(status_msg).hide();
             $(join_form).hide();
             $(msg_text).attr('disabled', false);
@@ -181,31 +181,31 @@ UCHAT = function (container, socket) {
             myName = yourName;
             whoIsHere.push(myName);
             userMsg('You joined as "' + myName + '".');
-            mocket.on('joinSuccess', undefined);
-            mocket.on('nameTaken', undefined);
-            mocket.on('nameTooShort', undefined);
+            mocket.on('uchat-joinSuccess', undefined);
+            mocket.on('uchat-nameTaken', undefined);
+            mocket.on('uchat-nameTooShort', undefined);
         });
 
-        mocket.on('nameTaken', function () {
+        mocket.on('uchat-nameTaken', function () {
             myName = undefined;
             $(name_text).show();
             $(name_text).focus();
             $(status_msg).html('try something else');
         });
 
-        mocket.on('nameTooShort', function () {
+        mocket.on('uchat-nameTooShort', function () {
             myName = undefined;
             $(name_text).show();
             $(name_text).focus();
             $(status_msg).html('that\'s too short');
         });
 
-        mocket.send('join', myName);
+        mocket.send('uchat-join', myName);
     }
 
     function tryEnter() {
-        mocket.send('enter', document.location.hash.substring(1));
-        mocket.on('entered', function (roomNameIn) {
+        mocket.send('uchat-enter', document.location.hash.substring(1));
+        mocket.on('uchat-entered', function (roomNameIn) {
             roomName = roomNameIn;
 
             document.location = "#" + roomName;
@@ -221,7 +221,7 @@ UCHAT = function (container, socket) {
                 $(name_text).hide();
                 tryJoin();
             }
-            mocket.on('entered', undefined);
+            mocket.on('uchat-entered', undefined);
         });
     }
 
@@ -337,7 +337,7 @@ UCHAT = function (container, socket) {
     commands.stats = {
         usage: '/stats ............. display some basic global statistics',
         func: function () {
-            mocket.send('stats');
+            mocket.send('uchat-stats');
         }
     };
 
@@ -365,11 +365,11 @@ UCHAT = function (container, socket) {
     commands.me = {
         usage: '/me msg ............ say something in the first person, like some kind of weirdo',
         func: function (msg_str) {
-            mocket.send('msg', '/me ' + msg_str);
+            mocket.send('uchat-msg', '/me ' + msg_str);
         }
     };
     
-    mocket.on('stats', function (stats) {
+    mocket.on('uchat-stats', function (stats) {
         userMsg(stats.clientCount + ' users using ' + stats.roomCount + ' rooms.');
     });
 
@@ -444,7 +444,7 @@ UCHAT = function (container, socket) {
         } else if ($(msg_text).val()[0] === '/') {
             tryToDoCommand($(msg_text).val());
         } else {
-            mocket.send('msg', $(msg_text).val());
+            mocket.send('uchat-msg', $(msg_text).val());
         }
         msgHistory[msgHistory.length - 1] = $(msg_text).val();
         msgHistoryPos = msgHistory.push('') - 1;
@@ -452,7 +452,7 @@ UCHAT = function (container, socket) {
         return false;
     });
 
-    mocket.on('logBegin', function () {
+    mocket.on('uchat-logBegin', function () {
         whoIsHere = [];
         $(msgs).hide();
         $(msgs).html('');
@@ -460,12 +460,12 @@ UCHAT = function (container, socket) {
         document.location.hash = '#' + roomName;
     });
 
-    mocket.on('logEnd', function () {
+    mocket.on('uchat-logEnd', function () {
         $(msgs).show();
         $(msgs)[0].scrollTop = $(msgs)[0].scrollHeight;
     });
 
-    mocket.on('msg', function (msg, name, time) {
+    mocket.on('uchat-msg', function (msg, name, time) {
         var jtpl, output, atYou = directedAtYou(msg), meMsg = isMeMsg(msg);
         jtpl = jQuery.createTemplate($(meMsg ? '#me-msg-jtpl' : '#msg-jtpl').val());
         msgAlt = !msgAlt;
@@ -516,7 +516,7 @@ UCHAT = function (container, socket) {
         $(msg_text).focus();
     });
 
-    mocket.on('joined', function (name, time) {
+    mocket.on('uchat-joined', function (name, time) {
         var jtpl, output;
         jtpl = jQuery.createTemplate($('#joined-jtpl').val());
         output = jQuery.processTemplateToText(jtpl, {name: name, time: time});
@@ -527,7 +527,7 @@ UCHAT = function (container, socket) {
         whoIsHere.push(name);
     });
 
-    mocket.on('left', function (name, time) {
+    mocket.on('uchat-left', function (name, time) {
         var jtpl, output;
         jtpl = jQuery.createTemplate($('#left-jtpl').val());
         output = jQuery.processTemplateToText(jtpl, {name: name, time: time});
