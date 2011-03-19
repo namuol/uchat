@@ -181,9 +181,11 @@ UCHAT = function (container, socket) {
             myName = yourName;
             whoIsHere.push(myName);
             userMsg('You joined as "' + myName + '".');
-            mocket.on('uchat-joinSuccess', undefined);
-            mocket.on('uchat-nameTaken', undefined);
-            mocket.on('uchat-nameTooShort', undefined);
+            setTimeout(function () {
+                mocket.unbind('uchat-joinSuccess');
+                mocket.unbind('uchat-nameTaken');
+                mocket.unbind('uchat-nameTooShort');
+            }, 50);
         });
 
         mocket.on('uchat-nameTaken', function () {
@@ -221,7 +223,9 @@ UCHAT = function (container, socket) {
                 $(name_text).hide();
                 tryJoin();
             }
-            mocket.on('uchat-entered', undefined);
+            setTimeout(function () {
+                mocket.unbind('uchat-entered');
+            }, 50);
         });
     }
 
